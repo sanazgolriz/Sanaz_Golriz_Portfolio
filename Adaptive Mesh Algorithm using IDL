@@ -1,0 +1,203 @@
+
+
+
+PRO merge_field_images
+
+dir = '/export/home/sanaz/data/Spitzer/Bulge/LowRes/Field_Images/'
+
+; now for fieldname : c32
+
+refimage = readfits(dir+'GLM_00050+0155_mosaic_I4_c32_pieceone.fits' , refhd)
+oldimage =  readfits(dir+'GLM_35950+0155_mosaic_I4_c32_piecetwo.fits' , oldhd)
+
+oldim_extra = fltarr(13280L, 9640)
+oldim_extra[0:6639,*] = oldim
+
+hastrom , oldimage , oldhd, newim, newhd , refhd, missing=0d0
+
+checkwindow, 0
+plotimage, hist_equal(refim,min=0,max=7000)
+checkwindow, 1
+plotimage, hist_equal(oldim,min=0,max=7000)
+checkwindow, 2
+plotimage, hist_equal(newim,min=0,max=7000)
+
+; In this  case the ref image is located on the left hand side and the
+; old image on the right hand side of the overlap region.
+
+; Attempting to find the overlap region between two images 
+done = 1
+counter = 0
+while done do begin
+if total(newim[counter,*]) ne 0 then begin
+min_limit = counter -1 
+done = 0
+print, counter
+endif else begin
+print, done
+counter += 1
+endelse 
+endwhile 
+max_limit = n_elements(newim[*,0])
+
+overlap_range = [min_limit, max_limit]
+overlap = (max_limit-min_limit)
+row =  n_elements(refimage[0,*])
+column = 2*fix(n_elements(refimage[*,0])) - (overlap)
+
+xrange = long([5100,7500] )
+yrange =  long([1000,2100])
+row = (xrange[1]-xrange[0])+1
+column = (yrange[1]-yrange[0])+1
+combined_image = dblarr( column , row)
+
+combined_image[0:min_limit,*] = refimage[0:min_limit,*]
+combined_image[(max_limit):(column-1), *] = oldimage[(overlap):(max_limit-1), *]
+; now we're gonna average the overlap region between the two ref and old images.
+
+combined_image[(min_limit):(max_limit-1),*] = $
+   (oldimage[0:(overlap-1),*] + refimage[(min_limit):(max_limit-1),*]) /2d0
+
+
+com_header = [newhd] ;, refhd]
+writefits , dir+ 'C32_Combined_Raw_Image.fits', combined_image , com_header
+
+status = plot_field_targets(field='C32', header=com_header , $
+                             image = combined_image ,dir=dir)
+
+refimage =0
+oldimage =0
+com_header = 0
+newim = 0
+combined_image = 0
+
+;---------------------------------------------------------------
+; now for fieldname: OGle
+
+;no need ! we have one piece image , yay!!
+ogle_refim = readfits(dir+'GLM_00050-0220_mosaic_I3_ogle.fits' , oglerefhd)
+
+status = plot_field_targets(field='Ogle', header=oglerefhd, image=ogle_refim ,dir=dir)
+ogle_refim = 0
+
+;---------------------------------------------------------------
+now for fieldname: c35
+
+refimage =  readfits(dir+'GLM_00050-0155_mosaic_I4_c35_pieceone.fits' , c35_refhd)
+oldimage = readfits(dir+'GLM_35950-0155_mosaic_I4_c35_piecetwo.fits' , c35_oldhd)
+
+hastrom , oldimage , c35_oldhd, c35_newim, c35_newhd , c35_refhd, missing = 0d0
+ the ref image goes on the left and the old image goes on the right
+ hand side of the overlap region.
+c35done = 1
+c35counter = 0
+while c35done do begin
+if total(c35_newim[c35counter,*]) ne 0 then begin
+min_limit = c35counter -1 
+c35done = 0
+print, c35counter
+endif else begin
+print, c35done
+c35counter += 1
+endelse 
+endwhile 
+max_limit = n_elements(c35_newim[*,0])
+overlap_range = [min_limit, max_limit]
+overlap = (max_limit-min_limit)
+row =  n_elements(refimage[0,*])
+column = 2*fix(n_elements(refimage[*,0])) - (overlap)
+combined_image = dblarr(column, row)
+
+combined_image[0:min_limit,*] = refimage[0:min_limit,*]
+combined_image[(max_limit):(column-1), *] = oldimage[(overlap):(max_limit-1), *]
+ now we're gonna average the overlap region between the two
+ ref and old images.
+combined_image[(min_limit):(max_limit-1),*] = $
+          (oldimage[0:(overlap-1),*] + refimage[(min_limit):(max_limit-1),*]) /2d0
+
+
+c35_header = [c35_newhd] ; , c35_refhd]
+writefits , dir+ 'C35_Combined_Raw_Image.fits', combined_image, c35_header
+status = plot_field_targets(field='C35', header=c35_header, $
+                                               image=combined_image,dir=dir)
+
+;-------------------From Stephen Uttenthaler paper
+tempim = readfits('/export/home/sanaz/data/Spitzer/Bulge/LowRes/Field_Images/Stephen_Uten_Field_Images/fig/bn1i4.fit' , hdr)
+
+; this image particularly needs rotating!
+HROT , tempim, hdr , newim, newhdr , 30 ,  -1 , -1, 0, MIS = 0
+
+HEULER, newhdr, /Galactic  ;converting the header to Galactic coordinates
+
+status = plot_field_targets(field='C35', header=newhdr, $
+                            image= newim,dir=dir)
+
+combined_image = 0
+refimage = 0
+oldimage = 0
+c35_newim = 0
+
+;---------------------------------------------------------------
+;now for fieldname : NGC6522
+
+refimage =  readfits(dir+'GLM_00150-0410_mosaic_I4_NGC_piecetwo.fits' , ngc_refhd)
+oldimage = readfits(dir+'GLM_00050-0410_mosaic_I4_NGC_pieceone.fits' , ngc_oldhd)
+
+hastrom , oldimage , ngc_oldhd, ngc_newim, ngc_newhd , ngc_refhd, missing = 0d0
+; In this case the ref image is located on the left and the old image
+; on the right hand side of the overlap region
+
+ngcdone = 1
+ngccounter = 0
+while ngcdone do begin
+if total(ngc_newim[ngccounter,*]) ne 0 then begin
+min_limit = ngccounter -1 
+ngcdone = 0
+print, ngccounter
+endif else begin
+print, ngcdone
+ngccounter += 1
+endelse 
+endwhile 
+max_limit = n_elements(ngc_newim[*,0])
+
+overlap_range = [min_limit, max_limit]
+overlap = (max_limit-min_limit)
+row =  n_elements(refimage[0,*])
+column = 2*fix(n_elements(refimage[*,0])) - (overlap)
+combined_image = dblarr(column, row)
+
+combined_image[0:min_limit,*] = refimage[0:min_limit,*]
+combined_image[(max_limit):(column-1), *] = oldimage[(overlap):(max_limit-1), *]
+
+; now we're gonna average the overlap region between the two ref and old images.
+
+combined_image[(min_limit):(max_limit-1),*] = $
+          (oldimage[0:(overlap-1),*] + refimage[(min_limit):(max_limit-1),*]) /2d;
+
+ngc_header = [ngc_newhd] ;, ngc_refhd]
+writefits , dir+ 'NGC_Combined_Raw_Image.fits', combined_image , ngc_header
+
+status = plot_field_targets(field='NGC', header=ngc_header, $
+                            image= temporary(combined_image),dir=dir)
+
+
+;-----------------------------------------
+; This is from Stephen Uttenthaler paper
+tempim = readfits('/export/home/sanaz/data/Spitzer/Bulge/LowRes/Field_Images/Stephen_Uten_Field_Images/fig/b6522i4.fit' , hdr)
+
+; this image particularly needs rotating!
+HROT , tempim, hdr , newim, newhdr , 30 ,  -1 , -1, 0, MIS = 0
+
+HEULER, newhdr, /Galactic  ;converting the header to Galactic coordinates
+
+status = plot_field_targets(field='NGC', header=newhdr, $
+                            image= newim,dir=dir)
+
+ngc_newim = 0
+refimage = 0
+oldimage = 0
+combined_image = 0
+
+
+END 
