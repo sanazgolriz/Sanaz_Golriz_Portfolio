@@ -1,5 +1,10 @@
 # Artificial Neural Network
 
+#This code shows how to use artificial neural nework to predict the outcome
+#of a single ovservation. In this case, predict user churn. The performance can be 
+#validated using k-fold cross validation. We tackle overfitting and drop out
+#as well as parameter tuning.
+
 # Installing Theano
 # pip install --upgrade --no-deps git+git://github.com/Theano/Theano.git
 
